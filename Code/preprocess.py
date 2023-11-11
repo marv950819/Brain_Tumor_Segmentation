@@ -5,21 +5,21 @@ import torch
 
 
 def readNpreprocessimage(imgs_pth, mask=False):
-    finimage = {}
     if not mask:
-        for keys in imgs_pth:
+        finimage = {}
+        for keys in imgs_pth.keys():
             temp = sitk.Cast(sitk.RescaleIntensity(sitk.ReadImage(imgs_pth[keys]), 0, 255), sitk.sitkUInt8)
             # Can fit in different preprocessing if required
             temp = np.moveaxis(sitk.GetArrayFromImage(temp), 0, -1)
             temp = transforms.ToTensor()(temp)
             finimage[keys] = temp
+        fusedimage = torch.cat((finimage['t2flair'], finimage['t2'], finimage['t1ce'], finimage['t1']), dim=0)
     else:
         maskimage = np.moveaxis(sitk.GetArrayFromImage(sitk.ReadImage(imgs_pth['mask'])), 0, -1)
         maskimage[maskimage == 4] = 3
         maskimage = maskimage.astype(np.uint8)
-        maskimage = torch.from_numpy(maskimage).long()
-        finimage['mask'] = maskimage
-    return finimage
+        fusedimage = torch.from_numpy(maskimage).long()
+    return fusedimage
 
 
 #Preprocessing Steps

@@ -14,8 +14,7 @@ class BrainTumorSegDataset(data.Dataset):
         lbl_pth = self.lbls_pth[index]
         images = readNpreprocessimage(img_pth, mask=False)
         mask_lbl = readNpreprocessimage(lbl_pth, mask=True)
-        survival_lbl = lbl_pth['survivaldays']
-
+        survival_lbl = int(lbl_pth['survivaldays'])
         return images, mask_lbl, survival_lbl
 
     def __len__(self):
@@ -23,4 +22,5 @@ class BrainTumorSegDataset(data.Dataset):
 
 def get_loader(config, imgs_pth, lbls_pth, mode):
     dataset = BrainTumorSegDataset(imgs_pth, lbls_pth, config, mode)
-    temp = dataset[0]
+    img, mask, lbl = dataset[0]
+    pass
