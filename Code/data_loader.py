@@ -1,5 +1,4 @@
 from torch.utils import data
-import SimpleITK as sitk
 from preprocess import readNpreprocessimage
 
 class BrainTumorSegDataset(data.Dataset):
@@ -17,8 +16,11 @@ class BrainTumorSegDataset(data.Dataset):
         mask_lbl = readNpreprocessimage(lbl_pth, mask=True)
         survival_lbl = lbl_pth['survivaldays']
 
+        return images, mask_lbl, survival_lbl
+
     def __len__(self):
         return len(self.imgs_pth)
 
 def get_loader(config, imgs_pth, lbls_pth, mode):
     dataset = BrainTumorSegDataset(imgs_pth, lbls_pth, config, mode)
+    temp = dataset[0]

@@ -1,9 +1,25 @@
 import SimpleITK as sitk
-
+import numpy as np
+import torchvision.transforms as transforms
+import torch
 
 
 def readNpreprocessimage(imgs_pth, mask=False):
-    pass
+    finimage = {}
+    if not mask:
+        for keys in imgs_pth:
+            temp = sitk.Cast(sitk.RescaleIntensity(sitk.ReadImage(imgs_pth[keys]), 0, 255), sitk.sitkUInt8)
+            # Can fit in different preprocessing if required
+            temp = np.moveaxis(sitk.GetArrayFromImage(temp), 0, -1)
+            temp = transforms.ToTensor()(temp)
+            finimage[keys] = temp
+    else:
+        maskimage = np.moveaxis(sitk.GetArrayFromImage(sitk.ReadImage(imgs_pth['mask'])), 0, -1)
+        maskimage[maskimage == 4] = 3
+        maskimage = maskimage.astype(np.uint8)
+        maskimage = torch.from_numpy(maskimage).long()
+        finimage['mask'] = maskimage
+    return finimage
 
 
 #Preprocessing Steps
