@@ -3,8 +3,9 @@ from pathlib import Path
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from data_loader import get_loader
-
-
+from solver import Solver
+from torch.backends import cudnn
+import os; os.system('')
 
 
 def getimglbllist(config):
@@ -26,22 +27,26 @@ def getimglbllist(config):
 
 
 def main(config):
+	cudnn.benchmark = True
 	df = getimglbllist(config)
 	X = df['Images'].tolist()
 	y = df['Labels'].tolist()
 	X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=69)
 	train_loader = get_loader(config, X_train, y_train, 'train')
 	test_loader = get_loader(config, X_test, y_test, 'test')
+	solver = Solver(config, train_loader)
+	solver.train()
 
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 
 	# Config parameters
-	parser.add_argument('--classes', type=int, default=2)
-	parser.add_argument('--num_epochs', type=int, default=30)
-	parser.add_argument('--num_epochs_decay', type=int, default=20)
-	parser.add_argument('--batch_size', type=int, default=32)
+	parser.add_argument('--model_type', type=str, default='UNet3D', help='UNet3D/ProbablyOtherModels')
+	parser.add_argument('--classes', type=int, default=4)
+	parser.add_argument('--num_epochs', type=int, default=10)
+	parser.add_argument('--num_epochs_decay', type=int, default=2)
+	parser.add_argument('--batch_size', type=int, default=2)
 	parser.add_argument('--lr', type=float, default=0.001)
 	parser.add_argument('--mean', type=float, default=[0.485, 0.456, 0.406])
 	parser.add_argument('--std', type=float, default=[0.229, 0.224, 0.225])
