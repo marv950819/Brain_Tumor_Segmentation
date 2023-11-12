@@ -34,9 +34,9 @@ def main(config):
 	X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=69)
 	train_loader = get_loader(config, X_train, y_train, 'train')
 	test_loader = get_loader(config, X_test, y_test, 'test')
-	solver = Solver(config, train_loader)
+	solver = Solver(config, train_loader, test_loader)
 	solver.train()
-
+	solver.test()
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()

@@ -104,4 +104,4 @@ class softmax_dice(nn.Module):
         loss2 = Dice(output[:, 2, ...], (target == 2).float())
         loss3 = Dice(output[:, 3, ...], (target == 3).float())
 
-        return loss1 + loss2 + loss3 + loss0, 1 - loss1.data, 1 - loss2.data, 1 - loss3.data
+        return loss0 + loss1 + loss2 + loss3, 1 - loss1.data, 1 - loss2.data, 1 - loss3.data

@@ -1,11 +1,12 @@
 import torch
-from network import Unet3D, softmax_dice
+from network import Unet3D, softmax_dice, Dice
 import os; os.system('')
 
 class Solver(object):
-    def __init__(self, config, train_loader):
+    def __init__(self, config, train_loader, test_loader):
         self.model_type = config.model_type
         self.train_loader = train_loader
+        self.test_loader = test_loader
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.net = None
         self.optimizer = None
@@ -53,6 +54,27 @@ class Solver(object):
                 self.net.zero_grad()
                 loss.backward()
                 self.optimizer.step()
+                #print(i)
             train_loss = train_loss / len(self.train_loader.sampler)
             train_loss_list.append(train_loss)
-            print(f"Train Epoch: {epoch}, Overall Loss: {train_loss / len(self.train_loader)} | L1 Dice : {dice_1_t / len(self.train_loader)} | L2 Dice : {dice_2_t / len(self.train_loader)} | L3 Dice : {dice_3_t / len(self.train_loader)}")
+            print(f"Train Epoch: {epoch}, Overall Loss: {train_loss} | L1 Dice : {dice_1_t / len(self.train_loader)} | L2 Dice : {dice_2_t / len(self.train_loader)} | L3 Dice : {dice_3_t / len(self.train_loader)}")
+            file_name = 'model_f' + str(epoch) + ".pth"
+            print("Saving Model")
+            torch.save(self.net.state_dict(), file_name)
+
+    def test(self):
+        self.net.load_state_dict(torch.load("model_f8.pth"))
+        self.net.train(False)
+        self.net.eval()
+        with torch.no_grad():
+            dice0 = dice1 = dice2 = dice3 = 0
+            for i, (images, GT, __) in enumerate(self.test_loader):
+                images = images.to(self.device)
+                GT = GT.to(self.device)
+                SR = self.net(images)
+                dice0 += Dice(SR[:, 0, :, :, :], (GT == 0).float())
+                dice1 += Dice(SR[:, 1, :, :, :], (GT == 1).float())
+                dice2 += Dice(SR[:, 2, :, :, :], (GT == 2).float())
+                dice3 += Dice(SR[:, 3, :, :, :], (GT == 3).float())
+
+        print(f"Test: L0 Dice : {dice0 / len(self.test_loader)} | L1 Dice : {dice1 / len(self.test_loader)} | L2 Dice : {dice2 / len(self.test_loader)} | L3 Dice : {dice3 / len(self.test_loader)}")

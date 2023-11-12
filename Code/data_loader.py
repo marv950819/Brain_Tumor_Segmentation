@@ -1,6 +1,7 @@
 from torch.utils import data
 from preprocess import readNpreprocessimage
 import numpy as np
+import matplotlib.pyplot as plt
 
 class BrainTumorSegDataset(data.Dataset):
     def __init__(self, imgs_pth, lbls_pth, config, mode):
@@ -24,8 +25,30 @@ class BrainTumorSegDataset(data.Dataset):
     def __len__(self):
         return len(self.imgs_pth)
 
+def visualize(img, mask):
+    slice = 75
+    fig, ax = plt.subplots(2, 5, figsize=(20, 5))
+    ax[0, 0].imshow(img[0, 0, :, :, slice])
+    ax[0, 1].imshow(img[0, 1, :, :, slice])
+    ax[0, 2].imshow(img[0, 2, :, :, slice])
+    ax[0, 3].imshow(img[0, 3, :, :, slice])
+    ax[0, 4].imshow(mask[0, :, :, slice])
+
+    ax[1, 0].imshow(img[1, 0, :, :, slice])
+    ax[1, 1].imshow(img[1, 1, :, :, slice])
+    ax[1, 2].imshow(img[1, 2, :, :, slice])
+    ax[1, 3].imshow(img[1, 3, :, :, slice])
+    ax[1, 4].imshow(mask[1, :, :, slice])
+    pass
+
+
+
 def get_loader(config, imgs_pth, lbls_pth, mode):
     dataset = BrainTumorSegDataset(imgs_pth, lbls_pth, config, mode)
-    #img, mask, lbl = dataset[0]
-    data_loader = data.DataLoader(dataset=dataset, batch_size=config.batch_size, shuffle=True)
+    if mode == 'train':
+        data_loader = data.DataLoader(dataset=dataset, batch_size=config.batch_size, shuffle=True)
+    else:
+        data_loader = data.DataLoader(dataset=dataset, batch_size=1, shuffle=True)
+    # img, mask, lbl = next(iter(data_loader))
+    # visualize(img, mask)
     return data_loader
