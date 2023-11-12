@@ -96,7 +96,6 @@ class softmax_dice(nn.Module):
         super(softmax_dice, self).__init__()
 
     def forward(self, output, target):
-        target[target == 4] = 3
         output = output.cuda()
         target = target.cuda()
         loss0 = Dice(output[:, 0, ...], (target == 0).float())

@@ -28,17 +28,18 @@ class BrainTumorSegDataset(data.Dataset):
 def visualize(img, mask):
     slice = 75
     fig, ax = plt.subplots(2, 5, figsize=(20, 5))
-    ax[0, 0].imshow(img[0, 0, :, :, slice])
-    ax[0, 1].imshow(img[0, 1, :, :, slice])
-    ax[0, 2].imshow(img[0, 2, :, :, slice])
-    ax[0, 3].imshow(img[0, 3, :, :, slice])
-    ax[0, 4].imshow(mask[0, :, :, slice])
+    ax[0, 0].imshow(img[0, 0, :, :, slice], cmap='gray'); ax[0, 0].set_title("T2-Flair")
+    ax[0, 1].imshow(img[0, 1, :, :, slice], cmap='gray'); ax[0, 1].set_title("T2")
+    ax[0, 2].imshow(img[0, 2, :, :, slice], cmap='gray'); ax[0, 2].set_title("T1ce")
+    ax[0, 3].imshow(img[0, 3, :, :, slice], cmap='gray'); ax[0, 3].set_title("T1")
+    ax[0, 4].imshow(mask[0, :, :, slice], cmap='gray'); ax[0, 4].set_title("Label Mask")
 
-    ax[1, 0].imshow(img[1, 0, :, :, slice])
-    ax[1, 1].imshow(img[1, 1, :, :, slice])
-    ax[1, 2].imshow(img[1, 2, :, :, slice])
-    ax[1, 3].imshow(img[1, 3, :, :, slice])
-    ax[1, 4].imshow(mask[1, :, :, slice])
+    ax[1, 0].imshow(img[1, 0, :, :, slice], cmap='gray')
+    ax[1, 1].imshow(img[1, 1, :, :, slice], cmap='gray')
+    ax[1, 2].imshow(img[1, 2, :, :, slice], cmap='gray')
+    ax[1, 3].imshow(img[1, 3, :, :, slice], cmap='gray')
+    ax[1, 4].imshow(mask[1, :, :, slice], cmap='gray')
+    plt.savefig("Exampleimages.pdf", format='pdf', dpi=300, bbox_inches='tight')
     pass
 
 
@@ -49,6 +50,7 @@ def get_loader(config, imgs_pth, lbls_pth, mode):
         data_loader = data.DataLoader(dataset=dataset, batch_size=config.batch_size, shuffle=True)
     else:
         data_loader = data.DataLoader(dataset=dataset, batch_size=1, shuffle=True)
+    # img, mask, lbl = dataset[0]
     # img, mask, lbl = next(iter(data_loader))
     # visualize(img, mask)
     return data_loader

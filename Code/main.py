@@ -35,7 +35,7 @@ def main(config):
 	train_loader = get_loader(config, X_train, y_train, 'train')
 	test_loader = get_loader(config, X_test, y_test, 'test')
 	solver = Solver(config, train_loader, test_loader)
-	solver.train()
+	#solver.train()
 	solver.test()
 
 if __name__ == '__main__':
@@ -44,7 +44,7 @@ if __name__ == '__main__':
 	# Config parameters
 	parser.add_argument('--model_type', type=str, default='UNet3D', help='UNet3D/ProbablyOtherModels')
 	parser.add_argument('--classes', type=int, default=4)
-	parser.add_argument('--num_epochs', type=int, default=10)
+	parser.add_argument('--num_epochs', type=int, default=20)
 	parser.add_argument('--num_epochs_decay', type=int, default=2)
 	parser.add_argument('--batch_size', type=int, default=2)
 	parser.add_argument('--lr', type=float, default=0.001)
