@@ -50,7 +50,7 @@ def get_loader(config, imgs_pth, lbls_pth, mode):
         data_loader = data.DataLoader(dataset=dataset, batch_size=config.batch_size, shuffle=True)
     else:
         data_loader = data.DataLoader(dataset=dataset, batch_size=1, shuffle=True)
-    # img, mask, lbl = dataset[0]
+    #img, mask, lbl = dataset[0]
     # img, mask, lbl = next(iter(data_loader))
     # visualize(img, mask)
     return data_loader

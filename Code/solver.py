@@ -1,5 +1,5 @@
 import torch
-from network import Unet3D, softmax_dice, Dice
+from network import Unet3D, softmax_dice, Dice, ProposedYnet
 import os; os.system('')
 
 class Solver(object):
@@ -18,6 +18,8 @@ class Solver(object):
     def build_model(self):
         if self.model_type == 'UNet3D':
             self.net = Unet3D(in_dim=4, out_dim=4, num_filters=64)
+        elif self.model_type == "ProposedYNet":
+            self.net = ProposedYnet(image_size=64, slice_depth=64, image_patch_size=4, slice_depth_patch_size=4, dim=768, depth=1, heads=8, mlp_dim=768, channels=4, dim_head=64, num_classes=4)
         else:
             print('Not in list')
             return -1

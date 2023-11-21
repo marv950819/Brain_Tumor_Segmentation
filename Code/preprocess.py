@@ -13,10 +13,11 @@ def readNpreprocessimage(imgs_pth, mask=False):
             temp = np.moveaxis(sitk.GetArrayFromImage(temp), 0, -1)
             temp = transforms.ToTensor()(temp)
             temp = temp[45:109, 88:152, 88:152]
-            #temp = temp[13:141, 56:184, 56:184]
-            #temp = temp[45:109, 56:184, 56:184]
-            finimage[keys] = torch.permute(temp, (1,2,0))
-        # fusedimage size (channels, height, width, depth)
+            # temp = temp[13:141, 56:184, 56:184]
+            # temp = temp[45:109, 56:184, 56:184]
+            # finimage[keys] = torch.permute(temp, (1,2,0))
+            finimage[keys] = temp
+        # fusedimage size (channels, depth, height, width)
         fusedimage = torch.stack((finimage['t2flair'], finimage['t2'], finimage['t1ce'], finimage['t1']), dim=0)
     else:
         # maskimage = np.moveaxis(sitk.GetArrayFromImage(sitk.ReadImage(imgs_pth['mask'])), 0, -1)
@@ -26,7 +27,7 @@ def readNpreprocessimage(imgs_pth, mask=False):
         maskimage = maskimage[45:109, 88:152, 88:152]
         # maskimage = maskimage[13:141, 56:184, 56:184]
         # maskimage = maskimage[45:109, 56:184, 56:184]
-        maskimage = np.moveaxis(maskimage, 0, -1)
+        # maskimage = np.moveaxis(maskimage, 0, -1)
         # fusedimage size (height, width, depth)
         fusedimage = torch.from_numpy(maskimage).long()
     return fusedimage
