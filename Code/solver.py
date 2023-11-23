@@ -12,6 +12,8 @@ class Solver(object):
         self.optimizer = None
         self.criterion = softmax_dice().to(self.device)
         self.lr = config.lr
+        self.beta1 = config.beta1
+        self.beta2 = config.beta2
         self.num_epochs = config.num_epochs
         self.build_model()
 
@@ -24,7 +26,7 @@ class Solver(object):
             print('Not in list')
             return -1
 
-        self.optimizer = torch.optim.Adam(list(self.net.parameters()), self.lr)
+        self.optimizer = torch.optim.AdamW(list(self.net.parameters()), self.lr, betas=(self.beta1, self.beta2))
         self.net.to(self.device)
 
     # self.print_network(self.net, self.model_type)

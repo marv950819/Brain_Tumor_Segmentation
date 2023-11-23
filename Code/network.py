@@ -248,49 +248,68 @@ class ProposedYnet(nn.Module):
         self.mlpregression = nn.Linear(dim, 1)
 
     def forward(self, x):
+        # t1 = self.vit3d(x)
+        # t1d = rearrange(t1, 'b (d h w) k -> b k d h w', d=int(self.slice_depth/self.slice_depth_patch_size),
+        #                 h=int(self.image_size/self.image_patch_size))
+        # t1dc = self.downconv(t1d)
+        # t1dc = rearrange(t1dc, 'b k d h w -> b (d h w) k')
+        #
+        # t2 = self.vit3d.transformer(t1dc)
+        # t2d = rearrange(t2, 'b (d h w) k -> b k d h w', d=int(self.slice_depth / (2 * self.slice_depth_patch_size)),
+        #                 h=int(self.image_size / (2 * self.image_patch_size)))
+        # t2dc = self.downconv(t2d)
+        # t2dc = rearrange(t2dc, 'b k d h w -> b (d h w) k')
+        #
+        # t3 = self.vit3d.transformer(t2dc)
+        # t3d = rearrange(t3, 'b (d h w) k -> b k d h w', d=int(self.slice_depth / (4 * self.slice_depth_patch_size)),
+        #                 h=int(self.image_size / (4 * self.image_patch_size)))
+        # t3dc = self.downconv(t3d)
+        # t3dc = rearrange(t3dc, 'b k d h w -> b (d h w) k')
+        #
+        # t4 = self.vit3d.transformer(t3dc)
+        # t4u = rearrange(t4, 'b (d h w) k -> b k d h w', d=int(self.slice_depth / (8 * self.slice_depth_patch_size)),
+        #                 h=int(self.image_size / (8 * self.image_patch_size)))
+        # t4uc = self.upconv(t4u)
+        # t4ucat = torch.cat((self.onedownconv(t3d), t4uc), dim=1)
+        # t4ucat = rearrange(t4ucat, 'b k d h w -> b (d h w) k')
+        #
+        # t5 = self.vit3d.transformer(t4ucat)
+        # t5u = rearrange(t5, 'b (d h w) k -> b k d h w', d=int(self.slice_depth / (4 * self.slice_depth_patch_size)),
+        #                 h=int(self.image_size / (4 * self.image_patch_size)))
+        # t5uc = self.upconv(t5u)
+        # t5ucat = torch.cat((self.onedownconv(t2d), t5uc), dim=1)
+        # t5ucat = rearrange(t5ucat, 'b k d h w -> b (d h w) k')
+        #
+        # t6 = self.vit3d.transformer(t5ucat)
+        # t6u = rearrange(t6, 'b (d h w) k -> b k d h w', d=int(self.slice_depth / (2 * self.slice_depth_patch_size)),
+        #                 h=int(self.image_size / (2 * self.image_patch_size)))
+        # t6uc = self.upconv(t6u)
+        # t6ucat = torch.cat((self.onedownconv(t1d), t6uc), dim=1)
+        # t6ucat = rearrange(t6ucat, 'b k d h w -> b (d h w) k')
+        #
+        # t7 = self.vit3d.transformer(t6ucat)
+        # t7u = rearrange(t7, 'b (d h w) k -> b k d h w', d=int(self.slice_depth / (self.slice_depth_patch_size)),
+        #                 h=int(self.image_size / (self.image_patch_size)))
+        # out = self.lastconv(t7u)
+        # x = F.softmax(out, dim=1)
+
         t1 = self.vit3d(x)
-        t1d = rearrange(t1, 'b (d h w) k -> b k d h w', d=int(self.slice_depth/self.slice_depth_patch_size),
-                        h=int(self.image_size/self.image_patch_size))
+        t1d = rearrange(t1, 'b (d h w) k -> b k d h w', d=int(self.slice_depth / self.slice_depth_patch_size),
+                        h=int(self.image_size / self.image_patch_size))
         t1dc = self.downconv(t1d)
         t1dc = rearrange(t1dc, 'b k d h w -> b (d h w) k')
 
         t2 = self.vit3d.transformer(t1dc)
-        t2d = rearrange(t2, 'b (d h w) k -> b k d h w', d=int(self.slice_depth / (2 * self.slice_depth_patch_size)),
+        t2u = rearrange(t2, 'b (d h w) k -> b k d h w', d=int(self.slice_depth / (2 * self.slice_depth_patch_size)),
                         h=int(self.image_size / (2 * self.image_patch_size)))
-        t2dc = self.downconv(t2d)
-        t2dc = rearrange(t2dc, 'b k d h w -> b (d h w) k')
+        t2uc = self.upconv(t2u)
+        t2ucat = torch.cat((self.onedownconv(t1d), t2uc), dim=1)
+        t2ucat = rearrange(t2ucat, 'b k d h w -> b (d h w) k')
 
-        t3 = self.vit3d.transformer(t2dc)
-        t3d = rearrange(t3, 'b (d h w) k -> b k d h w', d=int(self.slice_depth / (4 * self.slice_depth_patch_size)),
-                        h=int(self.image_size / (4 * self.image_patch_size)))
-        t3dc = self.downconv(t3d)
-        t3dc = rearrange(t3dc, 'b k d h w -> b (d h w) k')
-
-        t4 = self.vit3d.transformer(t3dc)
-        t4u = rearrange(t4, 'b (d h w) k -> b k d h w', d=int(self.slice_depth / (8 * self.slice_depth_patch_size)),
-                        h=int(self.image_size / (8 * self.image_patch_size)))
-        t4uc = self.upconv(t4u)
-        t4ucat = torch.cat((self.onedownconv(t3d), t4uc), dim=1)
-        t4ucat = rearrange(t4ucat, 'b k d h w -> b (d h w) k')
-
-        t5 = self.vit3d.transformer(t4ucat)
-        t5u = rearrange(t5, 'b (d h w) k -> b k d h w', d=int(self.slice_depth / (4 * self.slice_depth_patch_size)),
-                        h=int(self.image_size / (4 * self.image_patch_size)))
-        t5uc = self.upconv(t5u)
-        t5ucat = torch.cat((self.onedownconv(t2d), t5uc), dim=1)
-        t5ucat = rearrange(t5ucat, 'b k d h w -> b (d h w) k')
-
-        t6 = self.vit3d.transformer(t5ucat)
-        t6u = rearrange(t6, 'b (d h w) k -> b k d h w', d=int(self.slice_depth / (2 * self.slice_depth_patch_size)),
-                        h=int(self.image_size / (2 * self.image_patch_size)))
-        t6uc = self.upconv(t6u)
-        t6ucat = torch.cat((self.onedownconv(t1d), t6uc), dim=1)
-        t6ucat = rearrange(t6ucat, 'b k d h w -> b (d h w) k')
-
-        t7 = self.vit3d.transformer(t6ucat)
-        t7u = rearrange(t7, 'b (d h w) k -> b k d h w', d=int(self.slice_depth / (self.slice_depth_patch_size)),
+        t3 = self.vit3d.transformer(t2ucat)
+        t3u = rearrange(t3, 'b (d h w) k -> b k d h w', d=int(self.slice_depth / (self.slice_depth_patch_size)),
                         h=int(self.image_size / (self.image_patch_size)))
-        out = self.lastconv(t7u)
+        out = self.lastconv(t3u)
         x = F.softmax(out, dim=1)
         return x
 
