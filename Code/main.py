@@ -27,7 +27,7 @@ def getimglbllist(config):
 
 
 def main(config):
-	cudnn.benchmark = True
+	#cudnn.benchmark = True
 	df = getimglbllist(config)
 	X = df['Images'].tolist()
 	y = df['Labels'].tolist()
