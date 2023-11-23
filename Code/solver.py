@@ -56,7 +56,7 @@ class Solver(object):
                 self.net.zero_grad()
                 loss.backward()
                 self.optimizer.step()
-                #print(i)
+                print(i)
             train_loss = train_loss / len(self.train_loader.sampler)
             train_loss_list.append(train_loss)
             print(f"Train Epoch: {epoch}, Overall Loss: {train_loss} | L1 Dice : {dice_1_t / len(self.train_loader)} | L2 Dice : {dice_2_t / len(self.train_loader)} | L3 Dice : {dice_3_t / len(self.train_loader)}")
@@ -65,7 +65,7 @@ class Solver(object):
             torch.save(self.net.state_dict(), file_name)
 
     def test(self):
-        self.net.load_state_dict(torch.load("model_f8.pth"))
+        self.net.load_state_dict(torch.load("model_f13.pth"))
         self.net.train(False)
         self.net.eval()
         with torch.no_grad():

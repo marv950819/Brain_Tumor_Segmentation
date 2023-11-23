@@ -35,7 +35,7 @@ def main(config):
 	train_loader = get_loader(config, X_train, y_train, 'train')
 	test_loader = get_loader(config, X_test, y_test, 'test')
 	solver = Solver(config, train_loader, test_loader)
-	solver.train()
+	# solver.train()
 	solver.test()
 
 if __name__ == '__main__':
@@ -47,7 +47,7 @@ if __name__ == '__main__':
 	parser.add_argument('--num_epochs', type=int, default=20)
 	parser.add_argument('--num_epochs_decay', type=int, default=2)
 	parser.add_argument('--batch_size', type=int, default=2)
-	parser.add_argument('--lr', type=float, default=0.001)
+	parser.add_argument('--lr', type=float, default=0.01)
 	parser.add_argument('--mean', type=float, default=[0.485, 0.456, 0.406])
 	parser.add_argument('--std', type=float, default=[0.229, 0.224, 0.225])
 	parser.add_argument('--train_path', type=str, default=Path('../../Data/MICCAI_BraTS2020_TrainingData'))

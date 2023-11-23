@@ -243,6 +243,7 @@ class ProposedYnet(nn.Module):
         self.onedownconv = nn.Sequential(nn.Conv3d(dim, int(dim/2), kernel_size=1, stride=1, padding=0),
                                          nn.BatchNorm3d(int(dim/2)),
                                          nn.ReLU(inplace=True))
+        self.maxpool = nn.MaxPool3d(kernel_size=2, stride=2, padding=0)
         self.mlpclassification = nn.Linear(dim, num_classes)
         self.mlpregression = nn.Linear(dim, 1)
 
@@ -290,7 +291,8 @@ class ProposedYnet(nn.Module):
         t7u = rearrange(t7, 'b (d h w) k -> b k d h w', d=int(self.slice_depth / (self.slice_depth_patch_size)),
                         h=int(self.image_size / (self.image_patch_size)))
         out = self.lastconv(t7u)
-        return out
+        x = F.softmax(out, dim=1)
+        return x
 
 
 
@@ -309,8 +311,8 @@ class softmax_dice(nn.Module):
         super(softmax_dice, self).__init__()
 
     def forward(self, output, target):
-        output = output.cuda()
-        target = target.cuda()
+        #output = output.cuda()
+        #target = target.cuda()
         loss0 = Dice(output[:, 0, ...], (target == 0).float())
         loss1 = Dice(output[:, 1, ...], (target == 1).float())
         loss2 = Dice(output[:, 2, ...], (target == 2).float())
