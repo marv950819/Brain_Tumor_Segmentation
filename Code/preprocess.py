@@ -22,7 +22,8 @@ def readNpreprocessimage(imgs_pth, mask=False):
     else:
         # maskimage = np.moveaxis(sitk.GetArrayFromImage(sitk.ReadImage(imgs_pth['mask'])), 0, -1)
         maskimage = sitk.GetArrayFromImage(sitk.ReadImage(imgs_pth['mask']))
-        maskimage[maskimage == 4] = 3
+        maskimage[maskimage == 4] = 1
+        maskimage[maskimage == 2] = 1
         maskimage = maskimage.astype(np.uint8)
         maskimage = maskimage[45:109, 88:152, 88:152]
         # maskimage = maskimage[13:141, 56:184, 56:184]

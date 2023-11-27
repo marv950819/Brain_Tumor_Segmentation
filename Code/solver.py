@@ -11,6 +11,7 @@ class Solver(object):
         self.net = None
         self.optimizer = None
         self.criterion = softmax_dice().to(self.device)
+        # self.criterion = torch.nn.CrossEntropyLoss()
         self.lr = config.lr
         self.beta1 = config.beta1
         self.beta2 = config.beta2
@@ -21,7 +22,7 @@ class Solver(object):
         if self.model_type == 'UNet3D':
             self.net = Unet3D(in_dim=4, out_dim=4, num_filters=64)
         elif self.model_type == "ProposedYNet":
-            self.net = ProposedYnet(image_size=64, slice_depth=64, image_patch_size=4, slice_depth_patch_size=4, dim=768, depth=1, heads=8, mlp_dim=768, channels=4, dim_head=64, num_classes=4)
+            self.net = ProposedYnet(image_size=64, slice_depth=64, image_patch_size=4, slice_depth_patch_size=4, dim=768, depth=1, heads=8, mlp_dim=768, channels=4, dim_head=64, num_classes=2)
         else:
             print('Not in list')
             return -1
@@ -49,11 +50,12 @@ class Solver(object):
                 images = images.to(self.device)
                 GT = GT.to(self.device)
                 SR = self.net(images)
-                loss, dice1, dice2, dice3 = self.criterion(SR, GT)
+                # loss, dice1, dice2, dice3 = self.criterion(SR, GT)
+                loss = self.criterion(SR, GT)
                 train_loss += loss
-                dice_1_t += dice1
-                dice_2_t += dice2
-                dice_3_t += dice3
+                # dice_1_t += dice1
+                # dice_2_t += dice2
+                # dice_3_t += dice3
                 # Backprop + optimize
                 self.net.zero_grad()
                 loss.backward()
@@ -61,13 +63,14 @@ class Solver(object):
                 print(i)
             train_loss = train_loss / len(self.train_loader.sampler)
             train_loss_list.append(train_loss)
-            print(f"Train Epoch: {epoch}, Overall Loss: {train_loss} | L1 Dice : {dice_1_t / len(self.train_loader)} | L2 Dice : {dice_2_t / len(self.train_loader)} | L3 Dice : {dice_3_t / len(self.train_loader)}")
+            # print(f"Train Epoch: {epoch}, Overall Loss: {train_loss} | L1 Dice : {dice_1_t / len(self.train_loader)} | L2 Dice : {dice_2_t / len(self.train_loader)} | L3 Dice : {dice_3_t / len(self.train_loader)}")
+            print(f"Train Epoch: {epoch}, Overall Loss: {train_loss}")
             file_name = 'model_f' + str(epoch) + ".pth"
             print("Saving Model")
             torch.save(self.net.state_dict(), file_name)
 
     def test(self):
-        self.net.load_state_dict(torch.load("model_f13.pth"))
+        self.net.load_state_dict(torch.load("model_f10.pth"))
         self.net.train(False)
         self.net.eval()
         with torch.no_grad():
@@ -76,9 +79,11 @@ class Solver(object):
                 images = images.to(self.device)
                 GT = GT.to(self.device)
                 SR = self.net(images)
+                SR = torch.nn.functional.softmax(SR, dim=1)
                 dice0 += Dice(SR[:, 0, :, :, :], (GT == 0).float())
                 dice1 += Dice(SR[:, 1, :, :, :], (GT == 1).float())
-                dice2 += Dice(SR[:, 2, :, :, :], (GT == 2).float())
-                dice3 += Dice(SR[:, 3, :, :, :], (GT == 3).float())
+                # dice2 += Dice(SR[:, 2, :, :, :], (GT == 2).float())
+                # dice3 += Dice(SR[:, 3, :, :, :], (GT == 3).float())
 
-        print(f"Test: L0 Dice : {dice0 / len(self.test_loader)} | L1 Dice : {dice1 / len(self.test_loader)} | L2 Dice : {dice2 / len(self.test_loader)} | L3 Dice : {dice3 / len(self.test_loader)}")
+        # print(f"Test: L0 Dice : {1 - (dice0 / len(self.test_loader))} | L1 Dice : {1 - (dice1 / len(self.test_loader))} | L2 Dice : {1 - (dice2 / len(self.test_loader))} | L3 Dice : {1 - (dice3 / len(self.test_loader))}")
+        print(f"Test: L0 Dice : {1 - (dice0 / len(self.test_loader))} | L1 Dice : {1 - (dice1 / len(self.test_loader))}")

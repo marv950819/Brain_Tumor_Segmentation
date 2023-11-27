@@ -39,8 +39,8 @@ def visualize(img, mask):
     ax[1, 2].imshow(img[1, 2, :, :, slice], cmap='gray')
     ax[1, 3].imshow(img[1, 3, :, :, slice], cmap='gray')
     ax[1, 4].imshow(mask[1, :, :, slice], cmap='gray')
-    plt.savefig("Exampleimages.pdf", format='pdf', dpi=300, bbox_inches='tight')
-    pass
+    # plt.savefig("Exampleimages.pdf", format='pdf', dpi=300, bbox_inches='tight')
+    # pass
 
 
 

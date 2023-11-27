@@ -234,12 +234,10 @@ class ProposedYnet(nn.Module):
         self.downconv = nn.Sequential(nn.Conv3d(dim, dim, kernel_size=3, stride=2, padding=1),
                                       nn.BatchNorm3d(dim),
                                       nn.ReLU(inplace=True))
-        self.upconv = nn.Sequential(nn.ConvTranspose3d(dim, int(dim/2), kernel_size=3, stride=2, padding=1, output_padding=1),
+        self.upconv = nn.Sequential(nn.ConvTranspose3d(dim, int(dim/2), kernel_size=4, stride=2, padding=1, output_padding=0),
                                     nn.BatchNorm3d(int(dim/2)),
                                     nn.ReLU(inplace=True))
-        self.lastconv = nn.Sequential(nn.ConvTranspose3d(dim, 4, kernel_size=3, stride=4, padding=0, output_padding=1),
-                                      nn.BatchNorm3d(4),
-                                      nn.ReLU(inplace=True))
+        self.lastconv = nn.Sequential(nn.ConvTranspose3d(dim, 2, kernel_size=8, stride=4, padding=2, output_padding=0))
         self.onedownconv = nn.Sequential(nn.Conv3d(dim, int(dim/2), kernel_size=1, stride=1, padding=0),
                                          nn.BatchNorm3d(int(dim/2)),
                                          nn.ReLU(inplace=True))
@@ -310,8 +308,8 @@ class ProposedYnet(nn.Module):
         t3u = rearrange(t3, 'b (d h w) k -> b k d h w', d=int(self.slice_depth / (self.slice_depth_patch_size)),
                         h=int(self.image_size / (self.image_patch_size)))
         out = self.lastconv(t3u)
-        x = F.softmax(out, dim=1)
-        return x
+        # out = F.softmax(out, dim=1)
+        return out
 
 
 
@@ -330,11 +328,13 @@ class softmax_dice(nn.Module):
         super(softmax_dice, self).__init__()
 
     def forward(self, output, target):
-        #output = output.cuda()
-        #target = target.cuda()
+        output = output.to(self.device)
+        target = target.to(self.device)
+        output = F.softmax(output, dim=1)
         loss0 = Dice(output[:, 0, ...], (target == 0).float())
         loss1 = Dice(output[:, 1, ...], (target == 1).float())
-        loss2 = Dice(output[:, 2, ...], (target == 2).float())
-        loss3 = Dice(output[:, 3, ...], (target == 3).float())
+        # loss2 = Dice(output[:, 2, ...], (target == 2).float())
+        # loss3 = Dice(output[:, 3, ...], (target == 3).float())
 
-        return loss0 + loss1 + loss2 + loss3, 1 - loss1.data, 1 - loss2.data, 1 - loss3.data
+        return loss0 + loss1
+               # + loss2 + loss3, 1 - loss1.data, 1 - loss2.data, 1 - loss3.data
