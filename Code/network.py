@@ -175,15 +175,15 @@ class Transformer(nn.Module):
 
 
 class SimpleViT(nn.Module):
-    def __init__(self, image_size, image_patch_size, slice_depth, slice_depth_patch_size, dim, depth, heads, mlp_dim, channels = 3, dim_head = 64):
+    def __init__(self, image_size, image_patch_size, slice_depth_size, slice_depth_patch_size, dim, depth, heads, mlp_dim, channels = 3, dim_head = 64):
         super().__init__()
         image_height, image_width = pair(image_size)
         patch_height, patch_width = pair(image_patch_size)
 
         assert image_height % patch_height == 0 and image_width % patch_width == 0, 'Image dimensions must be divisible by the patch size.'
-        assert slice_depth % slice_depth_patch_size == 0, 'Frames must be divisible by the frame patch size'
+        assert slice_depth_size % slice_depth_patch_size == 0, 'Frames must be divisible by the frame patch size'
 
-        num_patches = (image_height // patch_height) * (image_width // patch_width) * (slice_depth // slice_depth_patch_size)
+        num_patches = (image_height // patch_height) * (image_width // patch_width) * (slice_depth_size // slice_depth_patch_size)
         patch_dim = channels * patch_height * patch_width * slice_depth_patch_size
 
         self.to_patch_embedding = nn.Sequential(
@@ -214,22 +214,16 @@ class SimpleViT(nn.Module):
 
 
 
-class ProposedYnet(nn.Module):
-    def __init__(self, image_size, slice_depth, image_patch_size, slice_depth_patch_size, dim, depth, heads, mlp_dim, channels, dim_head, num_classes):
+class ProposedVnet(nn.Module):
+    def __init__(self, image_size, slice_depth_size, image_patch_size, slice_depth_patch_size, dim, depth, heads,
+                 mlp_dim, channels, dim_head, num_classes, survival_classes):
         super().__init__()
-        self.image_size = image_size
-        self.slice_depth = slice_depth
-        self.image_patch_size = image_patch_size
-        self.slice_depth_patch_size = slice_depth_patch_size
-        self.dim = dim
-        self.depth = depth
-        self.heads = heads
-        self.mlp_dim = mlp_dim
-        self.channels = channels
-        self.dim_head = dim_head
-        self.num_classes = num_classes
-
-        self.vit3d = SimpleViT(image_size=image_size, image_patch_size=image_patch_size, slice_depth=slice_depth, slice_depth_patch_size=slice_depth_patch_size,
+        self.image_size=image_size
+        self.slice_depth_size=slice_depth_size
+        self.image_patch_size=image_patch_size
+        self.slice_depth_patch_size=slice_depth_patch_size
+        self.vit3d = SimpleViT(image_size=image_size, image_patch_size=image_patch_size, slice_depth_size=slice_depth_size,
+                               slice_depth_patch_size=slice_depth_patch_size,
                                dim=dim, depth=depth, heads=heads, mlp_dim=mlp_dim, channels=channels, dim_head=dim_head)
         self.downconv = nn.Sequential(nn.Conv3d(dim, dim, kernel_size=3, stride=2, padding=1),
                                       nn.BatchNorm3d(dim),
@@ -237,13 +231,11 @@ class ProposedYnet(nn.Module):
         self.upconv = nn.Sequential(nn.ConvTranspose3d(dim, int(dim/2), kernel_size=4, stride=2, padding=1, output_padding=0),
                                     nn.BatchNorm3d(int(dim/2)),
                                     nn.ReLU(inplace=True))
-        self.lastconv = nn.Sequential(nn.ConvTranspose3d(dim, 2, kernel_size=8, stride=4, padding=2, output_padding=0))
+        self.lastconv = nn.Sequential(nn.ConvTranspose3d(dim, num_classes, kernel_size=16, stride=8, padding=4, output_padding=0))
         self.onedownconv = nn.Sequential(nn.Conv3d(dim, int(dim/2), kernel_size=1, stride=1, padding=0),
                                          nn.BatchNorm3d(int(dim/2)),
                                          nn.ReLU(inplace=True))
-        self.maxpool = nn.MaxPool3d(kernel_size=2, stride=2, padding=0)
-        self.mlpclassification = nn.Linear(dim, num_classes)
-        self.mlpregression = nn.Linear(dim, 1)
+        self.mlpclassification = nn.Linear(dim, survival_classes)
 
     def forward(self, x):
         # t1 = self.vit3d(x)
@@ -292,23 +284,22 @@ class ProposedYnet(nn.Module):
         # x = F.softmax(out, dim=1)
 
         t1 = self.vit3d(x)
-        t1d = rearrange(t1, 'b (d h w) k -> b k d h w', d=int(self.slice_depth / self.slice_depth_patch_size),
+        t1d = rearrange(t1, 'b (d h w) k -> b k d h w', d=int(self.slice_depth_size / self.slice_depth_patch_size),
                         h=int(self.image_size / self.image_patch_size))
         t1dc = self.downconv(t1d)
         t1dc = rearrange(t1dc, 'b k d h w -> b (d h w) k')
 
         t2 = self.vit3d.transformer(t1dc)
-        t2u = rearrange(t2, 'b (d h w) k -> b k d h w', d=int(self.slice_depth / (2 * self.slice_depth_patch_size)),
+        t2u = rearrange(t2, 'b (d h w) k -> b k d h w', d=int(self.slice_depth_size / (2 * self.slice_depth_patch_size)),
                         h=int(self.image_size / (2 * self.image_patch_size)))
         t2uc = self.upconv(t2u)
         t2ucat = torch.cat((self.onedownconv(t1d), t2uc), dim=1)
         t2ucat = rearrange(t2ucat, 'b k d h w -> b (d h w) k')
 
         t3 = self.vit3d.transformer(t2ucat)
-        t3u = rearrange(t3, 'b (d h w) k -> b k d h w', d=int(self.slice_depth / (self.slice_depth_patch_size)),
+        t3u = rearrange(t3, 'b (d h w) k -> b k d h w', d=int(self.slice_depth_size / (self.slice_depth_patch_size)),
                         h=int(self.image_size / (self.image_patch_size)))
         out = self.lastconv(t3u)
-        # out = F.softmax(out, dim=1)
         return out
 
 
@@ -328,8 +319,8 @@ class softmax_dice(nn.Module):
         super(softmax_dice, self).__init__()
 
     def forward(self, output, target):
-        output = output.to(self.device)
-        target = target.to(self.device)
+        # output = output.to(self.device)
+        # target = target.to(self.device)
         output = F.softmax(output, dim=1)
         loss0 = Dice(output[:, 0, ...], (target == 0).float())
         loss1 = Dice(output[:, 1, ...], (target == 1).float())

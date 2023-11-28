@@ -35,18 +35,25 @@ def main(config):
 	train_loader = get_loader(config, X_train, y_train, 'train')
 	test_loader = get_loader(config, X_test, y_test, 'test')
 	solver = Solver(config, train_loader, test_loader)
-	solver.train()
+	# solver.train()
 	solver.test()
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 
 	# Config parameters
-	parser.add_argument('--model_type', type=str, default='ProposedYNet', help='UNet3D/ProposedYNet')
+	parser.add_argument('--model_type', type=str, default='ProposedVNet', help='UNet3D/ProposedVNet')
+	parser.add_argument('--image_size', type=int, default=128)
+	parser.add_argument('--image_patch_size', type=int, default=8)
+	parser.add_argument('--slice_depth_size', type=int, default=128)
+	parser.add_argument('--slice_depth_patch_size', type=int, default=8)
+	parser.add_argument('--start_pos', type=int, default=[13,56,56]) #[45,88,88]
+	parser.add_argument('--channels', type=int, default=4)
 	parser.add_argument('--classes', type=int, default=2)
+	parser.add_argument('--survival_classes', type=int, default=3)
 	parser.add_argument('--num_epochs', type=int, default=30)
-	parser.add_argument('--num_epochs_decay', type=int, default=2)
-	parser.add_argument('--batch_size', type=int, default=1)
+	parser.add_argument('--num_epochs_decay', type=int, default=4)
+	parser.add_argument('--batch_size', type=int, default=4)
 	parser.add_argument('--lr', type=float, default=0.0001)
 	parser.add_argument('--beta1', type=float, default=0.9)
 	parser.add_argument('--beta2', type=float, default=0.999)

@@ -1,10 +1,17 @@
 import torch
-from network import Unet3D, softmax_dice, Dice, ProposedYnet
+from network import Unet3D, softmax_dice, Dice, ProposedVnet
 import os; os.system('')
 
 class Solver(object):
     def __init__(self, config, train_loader, test_loader):
         self.model_type = config.model_type
+        self.image_size = config.image_size
+        self.image_patch_size = config.image_patch_size
+        self.slice_depth_size = config.slice_depth_size
+        self.slice_depth_patch_size = config.slice_depth_patch_size
+        self.channels = config.channels
+        self.classes = config.classes
+        self.survial_classes = config.survival_classes
         self.train_loader = train_loader
         self.test_loader = test_loader
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -21,8 +28,8 @@ class Solver(object):
     def build_model(self):
         if self.model_type == 'UNet3D':
             self.net = Unet3D(in_dim=4, out_dim=4, num_filters=64)
-        elif self.model_type == "ProposedYNet":
-            self.net = ProposedYnet(image_size=64, slice_depth=64, image_patch_size=4, slice_depth_patch_size=4, dim=768, depth=1, heads=8, mlp_dim=768, channels=4, dim_head=64, num_classes=2)
+        elif self.model_type == "ProposedVNet":
+            self.net = ProposedVnet(image_size=self.image_size, slice_depth_size=self.slice_depth_size, image_patch_size=self.image_patch_size, slice_depth_patch_size=self.slice_depth_patch_size, dim=768, depth=1, heads=8, mlp_dim=768, channels=self.channels, dim_head=64, num_classes=self.classes, survival_classes=self.survial_classes)
         else:
             print('Not in list')
             return -1
@@ -70,7 +77,7 @@ class Solver(object):
             torch.save(self.net.state_dict(), file_name)
 
     def test(self):
-        self.net.load_state_dict(torch.load("model_f10.pth"))
+        self.net.load_state_dict(torch.load("model_f21.pth"))
         self.net.train(False)
         self.net.eval()
         with torch.no_grad():
