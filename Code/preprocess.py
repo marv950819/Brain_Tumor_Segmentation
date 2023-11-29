@@ -4,7 +4,7 @@ import torchvision.transforms as transforms
 import torch
 
 
-def readNpreprocessimage(imgs_pth, mask=False):
+def readNpreprocessimage(imgs_pth, config, mask=False):
     if not mask:
         finimage = {}
         for keys in imgs_pth.keys():
@@ -12,22 +12,24 @@ def readNpreprocessimage(imgs_pth, mask=False):
             # Can fit in different preprocessing if required
             temp = np.moveaxis(sitk.GetArrayFromImage(temp), 0, -1)
             temp = transforms.ToTensor()(temp)
-            temp = temp[45:109, 88:152, 88:152]
-            #temp = temp[13:141, 56:184, 56:184]
-            #temp = temp[45:109, 56:184, 56:184]
-            finimage[keys] = torch.permute(temp, (1,2,0))
-        # fusedimage size (channels, height, width, depth)
+            temp = temp[config.start_pos[0]:config.start_pos[0]+config.slice_depth_size,
+                        config.start_pos[1]:config.start_pos[1]+config.image_size,
+                        config.start_pos[2]:config.start_pos[2]+config.image_size]
+            # finimage[keys] = torch.permute(temp, (1,2,0))
+            finimage[keys] = temp
+        # fusedimage size (channels, depth, height, width)
         fusedimage = torch.stack((finimage['t2flair'], finimage['t2'], finimage['t1ce'], finimage['t1']), dim=0)
     else:
         # maskimage = np.moveaxis(sitk.GetArrayFromImage(sitk.ReadImage(imgs_pth['mask'])), 0, -1)
         maskimage = sitk.GetArrayFromImage(sitk.ReadImage(imgs_pth['mask']))
-        maskimage[maskimage == 4] = 3
+        maskimage[maskimage == 4] = 1
+        maskimage[maskimage == 2] = 1
         maskimage = maskimage.astype(np.uint8)
-        maskimage = maskimage[45:109, 88:152, 88:152]
-        # maskimage = maskimage[13:141, 56:184, 56:184]
-        # maskimage = maskimage[45:109, 56:184, 56:184]
-        maskimage = np.moveaxis(maskimage, 0, -1)
-        # fusedimage size (height, width, depth)
+        maskimage = maskimage[config.start_pos[0]:config.start_pos[0]+config.slice_depth_size,
+                              config.start_pos[1]:config.start_pos[1]+config.image_size,
+                              config.start_pos[2]:config.start_pos[2]+config.image_size]
+        # maskimage = np.moveaxis(maskimage, 0, -1)
+        # fusedimage size (depth height, width)
         fusedimage = torch.from_numpy(maskimage).long()
     return fusedimage
 
