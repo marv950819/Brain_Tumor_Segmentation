@@ -13,7 +13,7 @@ def extractzipfiles(p):
             x.unlink()
 
 # Path to zipfiles (can be train or validation data paths, change accordingly)
-zippath = Path('../../Data/MICCAI_BraTS2020_ValidationData')
+zippath = Path('../../Data/MICCAI_BraTS2020_TrainingData')
 extractzipfiles(zippath)
 
 # import matplotlib.pyplot as plt
