@@ -300,6 +300,8 @@ class ProposedVnet(nn.Module):
         t3u = rearrange(t3, 'b (d h w) k -> b k d h w', d=int(self.slice_depth_size / (self.slice_depth_patch_size)),
                         h=int(self.image_size / (self.image_patch_size)))
         out = self.lastconv(t3u)
+
+
         return out
 
 
