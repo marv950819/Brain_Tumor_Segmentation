@@ -87,6 +87,7 @@ class Solver(object):
                 GT = GT.to(self.device)
                 SR = self.net(images)
                 SR = torch.nn.functional.softmax(SR, dim=1)
+                # self.viz(images, GT, SR)
                 dice0 += Dice(SR[:, 0, :, :, :], (GT == 0).float())
                 dice1 += Dice(SR[:, 1, :, :, :], (GT == 1).float())
                 # dice2 += Dice(SR[:, 2, :, :, :], (GT == 2).float())
@@ -94,3 +95,24 @@ class Solver(object):
 
         # print(f"Test: L0 Dice : {1 - (dice0 / len(self.test_loader))} | L1 Dice : {1 - (dice1 / len(self.test_loader))} | L2 Dice : {1 - (dice2 / len(self.test_loader))} | L3 Dice : {1 - (dice3 / len(self.test_loader))}")
         print(f"Test: L0 Dice : {1 - (dice0 / len(self.test_loader))} | L1 Dice : {1 - (dice1 / len(self.test_loader))}")
+
+    def viz(self, images, GT, SR):
+        import matplotlib.pyplot as plt
+        fig, ax = plt.subplots(1, 6, figsize=(20, 5))
+        slice = 64
+        images = torch.permute(images, (0, 1, 3, 4, 2))
+        GT = torch.permute(GT, (0, 2, 3, 1))
+        SR = torch.permute(SR, (0, 1, 3, 4, 2))
+        ax[0].imshow(images[0, 0, :, :, slice], cmap='gray')
+        ax[0].set_title("T2-Flair")
+        ax[1].imshow(images[0, 1, :, :, slice], cmap='gray')
+        ax[1].set_title("T2")
+        ax[2].imshow(images[0, 2, :, :, slice], cmap='gray')
+        ax[2].set_title("T1ce")
+        ax[3].imshow(images[0, 3, :, :, slice], cmap='gray')
+        ax[3].set_title("T1")
+        ax[4].imshow(GT[0, :, :, slice], cmap='gray')
+        ax[4].set_title("Label Mask")
+        ax[5].imshow(SR[0, 1, :, :, slice], cmap='gray')
+        ax[5].set_title("Pred")
+        plt.savefig("Result.png", format='png', bbox_inches='tight')
