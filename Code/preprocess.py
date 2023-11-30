@@ -22,8 +22,20 @@ def readNpreprocessimage(imgs_pth, config, mask=False):
     else:
         # maskimage = np.moveaxis(sitk.GetArrayFromImage(sitk.ReadImage(imgs_pth['mask'])), 0, -1)
         maskimage = sitk.GetArrayFromImage(sitk.ReadImage(imgs_pth['mask']))
-        maskimage[maskimage == 4] = 1
+
+        # Whole Tumor
         maskimage[maskimage == 2] = 1
+        maskimage[maskimage == 4] = 1
+
+        # Tumor Core
+        # maskimage[maskimage == 2] = 0
+        # maskimage[maskimage == 4] = 1
+
+        # Enhancing Tumor
+        # maskimage[maskimage == 1] = 0
+        # maskimage[maskimage == 2] = 0
+        # maskimage[maskimage == 4] = 1
+
         maskimage = maskimage.astype(np.uint8)
         maskimage = maskimage[config.start_pos[0]:config.start_pos[0]+config.slice_depth_size,
                               config.start_pos[1]:config.start_pos[1]+config.image_size,
