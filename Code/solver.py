@@ -87,12 +87,12 @@ class Solver(object):
                 GT = GT.to(self.device)
                 SR = self.net(images)
                 SR = torch.nn.functional.softmax(SR, dim=1)
-                # self.viz(images, GT, SR)
+                
                 dice0 += Dice(SR[:, 0, :, :, :], (GT == 0).float())
                 dice1 += Dice(SR[:, 1, :, :, :], (GT == 1).float())
                 # dice2 += Dice(SR[:, 2, :, :, :], (GT == 2).float())
                 # dice3 += Dice(SR[:, 3, :, :, :], (GT == 3).float())
-
+            self.viz(images, GT, SR)
         # print(f"Test: L0 Dice : {1 - (dice0 / len(self.test_loader))} | L1 Dice : {1 - (dice1 / len(self.test_loader))} | L2 Dice : {1 - (dice2 / len(self.test_loader))} | L3 Dice : {1 - (dice3 / len(self.test_loader))}")
         print(f"Test: L0 Dice : {1 - (dice0 / len(self.test_loader))} | L1 Dice : {1 - (dice1 / len(self.test_loader))}")
 

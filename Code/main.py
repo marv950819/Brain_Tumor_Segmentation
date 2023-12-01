@@ -9,7 +9,7 @@ import os; os.system('')
 
 
 def getimglbllist(config):
-	trainfolderlist = sorted([x for x in config.train_path.iterdir() if x.is_dir()])
+	trainfolderlist = sorted([x for x in config.train_path.iterdir() if x.is_dir()])[0:10]
 	eachfolcontent = [None] * len(trainfolderlist)
 	survival_data = pd.read_csv(config.survival_csv_path)
 	j = 0
