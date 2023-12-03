@@ -1,11 +1,12 @@
-from torch.utils import data
-from monai.transforms import LoadImaged, Compose, ScaleIntensityRanged, SpatialCropd
-import matplotlib.pyplot as plt
-import SimpleITK as sitk
-import numpy as np
 import torch
+from torch.utils import data
+from preprocess import readNpreprocessimage
+import numpy as np
+import matplotlib.pyplot as plt
 import monai
-from monai.transforms import Compose, LoadImaged, ScaleIntensityRanged, CropForeground, ToTensord, RandAffined
+import random
+from monai.transforms import Compose, Rotated, RandGaussianNoised, RandFlipd, NormalizeIntensityd, RandShiftIntensityd
+
 
 class BrainTumorSegDataset(data.Dataset):
     def __init__(self, imgs_pth, lbls_pth, config, mode):
@@ -14,56 +15,31 @@ class BrainTumorSegDataset(data.Dataset):
         self.imgs_pth = imgs_pth
         self.lbls_pth = lbls_pth
 
-        self.img_transforms = Compose([
-            LoadImaged(keys=['t2flair', 't1', 't1ce', 't2']),
-            ScaleIntensityRanged(keys=['t2flair', 't1', 't1ce', 't2'], a_min=0, a_max=255, b_min=0.0, b_max=1.0, clip=True),
-            ToTensord(keys=['t2flair', 't1', 't1ce', 't2']),
-            # Note: CropForeground is not working properly, should accept 3 parameters on roi_size neither CropForeground or RandAffined
-            #CenterSpatialCrop(keys=['mask'], roi_size=(config.slice_depth_size, config.image_size, config.image_size)),
-            #CropForeground(keys=['t2flair', 't1', 't1ce', 't2'],  roi_size=(config.slice_depth_size, config.image_size, config.image_size), allow_smaller=True),
-            # RandAffined(
-            #     keys=['t2flair', 't1', 't1ce', 't2'],
-            #     prob=1.0,
-            #     spatial_size=(300, 300, 50),
-            #     translate_range=(40, 40, 2),
-            #     rotate_range=(np.pi / 36, np.pi / 36, np.pi / 4),
-            #     scale_range=(0.15, 0.15, 0.15),
-            #     padding_mode="border",
-            # ),
-            ])
-        
-        self.mask_transforms = Compose([
-            LoadImaged(keys=['mask']),
-            ScaleIntensityRanged(keys=['mask'], a_min=0, a_max=255, b_min=0.0, b_max=1.0, clip=True),
-            ToTensord(keys=['mask']),
-            #CenterSpatialCrop(keys=['mask'], roi_size=(128, 128, 128)),
+        self.transformations= Compose([
+            Rotated(keys=["image", "label"], angle=-0.4, mode = ['bilinear', 'nearest']),
+            RandGaussianNoised(keys=["image"], prob=0.6),
+            NormalizeIntensityd(keys="image", nonzero=True, channel_wise=True),
+            RandShiftIntensityd(keys="image", offsets=0.1, prob=1.0),
         ])
-
-    def __getitem__(self, index):
-
-        # Load and transform images
-        img_data = self.img_transforms({key: self.imgs_pth[index][key] for key in ['t2flair', 't1', 't1ce', 't2']})
-        
-        # stack images
-        images = torch.stack([
-            img_data[key]
-            for key in ['t2flair', 't1', 't1ce', 't2']], dim=0)
-        
-        # Load and transfrom mask
-        mask = self.mask_transforms({key: self.lbls_pth[index][key] for key in ['mask']})['mask']
     
-        # survival label
-        survival_lbl = np.nan
-        if 'survivaldays' in self.lbls_pth[index] and self.lbls_pth[index]['survivaldays'] is not None:
-            survival_lbl = int(self.lbls_pth[index]['survivaldays'])
+    def __getitem__(self, index):
+        img_pth = self.imgs_pth[index]
+        lbl_pth = self.lbls_pth[index]
+        images = readNpreprocessimage(img_pth, self.config, mask=False)
+        mask_lbl = readNpreprocessimage(lbl_pth, self.config, mask=True)
+        dict_mask_img = {'image': images, 'label': mask_lbl}
+        trans_images = self.transformations(dict_mask_img)
 
-        return images, mask, survival_lbl
+        if lbl_pth['survivaldays'] is not None:
+            survival_lbl = int(lbl_pth['survivaldays'])
+        else:
+            survival_lbl = np.NaN
+        return trans_images['image'], trans_images['label'], survival_lbl
 
     def __len__(self):
         return len(self.imgs_pth)
 
-
-def visualize(img, mask):
+def visualize(img, mask, filename):
     slice = 75
     fig, ax = plt.subplots(2, 5, figsize=(20, 5))
     img = torch.permute(img, (0,1,3,4,2))
@@ -79,18 +55,18 @@ def visualize(img, mask):
     ax[1, 2].imshow(img[1, 2, :, :, slice], cmap='gray')
     ax[1, 3].imshow(img[1, 3, :, :, slice], cmap='gray')
     ax[1, 4].imshow(mask[1, :, :, slice], cmap='gray')
-    plt.savefig("Exampleimages_4.png", format='png', bbox_inches='tight')
+    plt.savefig(filename, format='png', bbox_inches='tight')
+
 
 def get_loader(config, imgs_pth, lbls_pth, mode):
     dataset = BrainTumorSegDataset(imgs_pth, lbls_pth, config, mode)
     if mode == 'train':
         data_loader = data.DataLoader(dataset=dataset, batch_size=config.batch_size, shuffle=True)
     else:
-        data_loader = data.DataLoader(dataset=dataset, batch_size=1, shuffle=False)
+        data_loader = data.DataLoader(dataset=dataset, batch_size=1, shuffle=True)
     # img, mask, lbl = dataset[0]
     # img, mask, lbl = next(iter(data_loader))
-    # visualize(img, mask)
-    # print(img.shape, mask.shape, lbl.shape)
-
+    # print(img.shape, mask.shape)
+    # visualize(img, mask, "Exampleimages.png")
+    # print(error)
     return data_loader
-
