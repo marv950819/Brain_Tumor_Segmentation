@@ -77,7 +77,7 @@ class Solver(object):
             torch.save(self.net.state_dict(), file_name)
 
     def test(self):
-        self.net.load_state_dict(torch.load("model_f29.pth"))
+        self.net.load_state_dict(torch.load("model_f29_whole.pth"))
         self.net.train(False)
         self.net.eval()
         with torch.no_grad():
@@ -115,4 +115,4 @@ class Solver(object):
         ax[4].set_title("Label Mask")
         ax[5].imshow(SR[0, 1, :, :, slice], cmap='gray')
         ax[5].set_title("Pred")
-        plt.savefig("Result.png", format='png', bbox_inches='tight')
+        plt.savefig("Result_whole.png", format='png', bbox_inches='tight')
