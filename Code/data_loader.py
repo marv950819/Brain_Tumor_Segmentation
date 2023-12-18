@@ -67,6 +67,5 @@ def get_loader(config, imgs_pth, lbls_pth, mode):
     # img, mask, lbl = dataset[0]
     # img, mask, lbl = next(iter(data_loader))
     # print(img.shape, mask.shape)
-    # visualize(img, mask, "Exampleimages.png")
-    # print(error)
+    # visualize(img, mask, "results/Exampleimages.png")
     return data_loader
