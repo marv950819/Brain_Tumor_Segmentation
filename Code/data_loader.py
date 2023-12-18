@@ -57,6 +57,28 @@ def visualize(img, mask, filename):
     ax[1, 4].imshow(mask[1, :, :, slice], cmap='gray')
     plt.savefig(filename, format='png', bbox_inches='tight')
 
+    # import matplotlib.pyplot as plt
+    # fig, ax = plt.subplots(1, 6, figsize=(20, 5))
+    # slice = 64
+    # images = torch.permute(images, (0, 1, 3, 4, 2))
+    # GT = torch.permute(GT, (0, 2, 3, 1))
+    # SR = torch.permute(SR, (0, 1, 3, 4, 2))
+    # ax[0].imshow(images[0, 0, :, :, slice], cmap='gray');
+    # ax[0].set_title("T2-Flair")
+    # ax[1].imshow(images[0, 1, :, :, slice], cmap='gray');
+    # ax[1].set_title("T2")
+    # ax[2].imshow(images[0, 2, :, :, slice], cmap='gray');
+    # ax[2].set_title("T1ce")
+    # ax[3].imshow(images[0, 3, :, :, slice], cmap='gray');
+    # ax[3].set_title("T1")
+    # ax[4].imshow(GT[0, :, :, slice], cmap='gray');
+    # ax[4].set_title("Label Mask")
+    # ax[5].imshow(SR[0, 1, :, :, slice], cmap='gray');
+    # ax[5].set_title("Pred")
+    # plt.savefig("Result.png", format='png', bbox_inches='tight')
+    # pass
+
+
 
 def get_loader(config, imgs_pth, lbls_pth, mode):
     dataset = BrainTumorSegDataset(imgs_pth, lbls_pth, config, mode)
