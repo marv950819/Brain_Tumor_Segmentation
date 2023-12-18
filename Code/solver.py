@@ -1,6 +1,8 @@
 import torch
 from network import Unet3D, softmax_dice, Dice, ProposedVnet
 import os; os.system('')
+import imageio
+import numpy as np
 
 class Solver(object):
     def __init__(self, config, train_loader, test_loader):
@@ -77,7 +79,7 @@ class Solver(object):
             torch.save(self.net.state_dict(), file_name)
 
     def test(self):
-        self.net.load_state_dict(torch.load("model_f29.pth"))
+        self.net.load_state_dict(torch.load("model_f29_core.pth"))
         self.net.train(False)
         self.net.eval()
         with torch.no_grad():
@@ -87,7 +89,7 @@ class Solver(object):
                 GT = GT.to(self.device)
                 SR = self.net(images)
                 SR = torch.nn.functional.softmax(SR, dim=1)
-                # self.viz(images, GT, SR)
+                self.viz(images, GT, SR)
                 dice0 += Dice(SR[:, 0, :, :, :], (GT == 0).float())
                 dice1 += Dice(SR[:, 1, :, :, :], (GT == 1).float())
                 # dice2 += Dice(SR[:, 2, :, :, :], (GT == 2).float())
@@ -98,21 +100,66 @@ class Solver(object):
 
     def viz(self, images, GT, SR):
         import matplotlib.pyplot as plt
-        fig, ax = plt.subplots(1, 6, figsize=(20, 5))
-        slice = 64
         images = torch.permute(images, (0, 1, 3, 4, 2))
         GT = torch.permute(GT, (0, 2, 3, 1))
         SR = torch.permute(SR, (0, 1, 3, 4, 2))
-        ax[0].imshow(images[0, 0, :, :, slice], cmap='gray')
-        ax[0].set_title("T2-Flair")
-        ax[1].imshow(images[0, 1, :, :, slice], cmap='gray')
-        ax[1].set_title("T2")
-        ax[2].imshow(images[0, 2, :, :, slice], cmap='gray')
-        ax[2].set_title("T1ce")
-        ax[3].imshow(images[0, 3, :, :, slice], cmap='gray')
-        ax[3].set_title("T1")
-        ax[4].imshow(GT[0, :, :, slice], cmap='gray')
-        ax[4].set_title("Label Mask")
-        ax[5].imshow(SR[0, 1, :, :, slice], cmap='gray')
-        ax[5].set_title("Pred")
-        plt.savefig("Result.png", format='png', bbox_inches='tight')
+
+        gif_images_GT = []
+        gif_images_SR = []
+        gif_combined = []
+        for i in range(images.shape[4]):  
+            slice_img = images[0, 0, :, :, i].cpu().numpy()
+            slice_img = (slice_img - slice_img.min()) / (slice_img.max() - slice_img.min())
+            slice_img = (slice_img * 255).astype(np.uint8)
+            slice_img_rgb = np.stack((slice_img,)*3, axis=-1)
+
+            # overlay GT
+            slice_gt = GT[0, :, :, i].cpu().numpy()
+            slice_gt_colored = plt.get_cmap('jet')(slice_gt)[:, :, :3]
+            slice_gt_colored = (slice_gt_colored * 255).astype(np.uint8)
+            gt_mask = np.stack((slice_gt,)*3, axis=-1) > 0  # Create a 3D mask
+            blended_img_GT = np.where(gt_mask, slice_gt_colored, slice_img_rgb.copy())
+            blended_img_GT = blended_img_GT.astype(np.uint8)
+            #gif_images_GT.append(blended_img_GT)
+
+            #  overlay SR
+            slice_sr = SR[0, 0, :, :, i].cpu().numpy()
+            slice_sr_colored = plt.get_cmap('summer')(slice_sr)[:, :, :3]
+            slice_sr_colored = (slice_sr_colored * 255).astype(np.uint8)
+            sr_mask = np.stack((slice_sr,)*3, axis=-1) > 0.1
+
+            blended_img_SR = np.where(sr_mask, slice_img_rgb, slice_sr_colored)
+            blended_img_SR = blended_img_SR.astype(np.uint8)
+            #gif_images_SR.append(blended_img_SR)
+
+            gif_images_GT.append(blended_img_GT)
+            gif_images_SR.append(blended_img_SR)
+
+            # Concatenate images, GT, and SR side by side
+            combined_img = np.concatenate((slice_img_rgb, blended_img_GT, blended_img_SR), axis=1)
+            gif_combined.append(combined_img)
+
+        # Save the combined GIF
+        imageio.mimsave('results/output_combined_core.gif', gif_combined, duration=0.1)
+           
+
+    # def viz(self, images, GT, SR):
+    #     import matplotlib.pyplot as plt
+    #     fig, ax = plt.subplots(1, 6, figsize=(20, 5))
+    #     slice = 64
+    #     images = torch.permute(images, (0, 1, 3, 4, 2))
+    #     GT = torch.permute(GT, (0, 2, 3, 1))
+    #     SR = torch.permute(SR, (0, 1, 3, 4, 2))
+    #     ax[0].imshow(images[0, 0, :, :, slice], cmap='gray')
+    #     ax[0].set_title("T2-Flair")
+    #     ax[1].imshow(images[0, 1, :, :, slice], cmap='gray')
+    #     ax[1].set_title("T2")
+    #     ax[2].imshow(images[0, 2, :, :, slice], cmap='gray')
+    #     ax[2].set_title("T1ce")
+    #     ax[3].imshow(images[0, 3, :, :, slice], cmap='gray')
+    #     ax[3].set_title("T1")
+    #     ax[4].imshow(GT[0, :, :, slice], cmap='gray')
+    #     ax[4].set_title("Label Mask")
+    #     ax[5].imshow(SR[0, 1, :, :, slice], cmap='gray')
+    #     ax[5].set_title("Pred")
+    #     plt.savefig(f"Result_whole_slice{str(slice)}.png", format='png', bbox_inches='tight')

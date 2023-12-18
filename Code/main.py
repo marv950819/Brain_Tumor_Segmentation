@@ -35,7 +35,7 @@ def main(config):
 	train_loader = get_loader(config, X_train, y_train, 'train')
 	test_loader = get_loader(config, X_test, y_test, 'test')
 	solver = Solver(config, train_loader, test_loader)
-	solver.train()
+	#solver.train()
 	solver.test()
 
 if __name__ == '__main__':

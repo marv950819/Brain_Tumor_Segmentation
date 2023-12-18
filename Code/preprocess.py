@@ -24,12 +24,12 @@ def readNpreprocessimage(imgs_pth, config, mask=False):
         maskimage = sitk.GetArrayFromImage(sitk.ReadImage(imgs_pth['mask']))
 
         # Whole Tumor
-        maskimage[maskimage == 2] = 1
-        maskimage[maskimage == 4] = 1
+        # maskimage[maskimage == 2] = 1
+        # maskimage[maskimage == 4] = 1
 
         # Tumor Core
-        # maskimage[maskimage == 2] = 0
-        # maskimage[maskimage == 4] = 1
+        maskimage[maskimage == 2] = 0
+        maskimage[maskimage == 4] = 1
 
         # Enhancing Tumor
         # maskimage[maskimage == 1] = 0
