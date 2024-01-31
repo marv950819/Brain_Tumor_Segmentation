@@ -9,6 +9,7 @@ import os; os.system('')
 
 
 def getimglbllist(config):
+	#trainfolderlist = sorted([x for x in config.train_path.iterdir() if x.is_dir()])[0:10]
 	trainfolderlist = sorted([x for x in config.train_path.iterdir() if x.is_dir()])
 	eachfolcontent = [None] * len(trainfolderlist)
 	survival_data = pd.read_csv(config.survival_csv_path)
@@ -35,7 +36,7 @@ def main(config):
 	train_loader = get_loader(config, X_train, y_train, 'train')
 	test_loader = get_loader(config, X_test, y_test, 'test')
 	solver = Solver(config, train_loader, test_loader)
-	#solver.train()
+	solver.train()
 	solver.test()
 
 if __name__ == '__main__':
